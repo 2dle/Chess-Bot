@@ -1,0 +1,347 @@
+import tkinter as tk
+from PIL import Image, ImageTk
+
+
+class Piece:
+    def __init__(self, color):
+        self.color = color
+
+    def get_moves(self, board, row, col):
+        pass
+
+
+class Pawn(Piece):
+    def __str__(self):
+        return 'pw' if self.color == 'white' else 'pb'
+
+    def get_moves(self, board, row, col):
+        moves = []
+        if self.color == 'white':
+            if row > 0:
+                if board[row - 1][col] == '.':
+                    moves.append((row - 1, col))
+                # Атака по диагонали влево
+                if col > 0 and isinstance(board[row - 1][col - 1], Piece) and board[row - 1][col - 1].color != self.color:
+                    moves.append((row - 1, col - 1))
+                # Атака по диагонали вправо
+                if col < 7 and isinstance(board[row - 1][col + 1], Piece) and board[row - 1][col + 1].color != self.color:
+                    moves.append((row - 1, col + 1))
+                # Ход на две клетки вперед, если пешка находится на начальной позиции
+                if row == 6 and board[row - 1][col] == '.' and board[row - 2][col] == '.':
+                    moves.append((row - 2, col))
+        else:
+            if row < 7:
+                if board[row + 1][col] == '.':
+                    moves.append((row + 1, col))
+                # Атака по диагонали влево
+                if col > 0 and isinstance(board[row + 1][col - 1], Piece) and board[row + 1][col - 1].color != self.color:
+                    moves.append((row + 1, col - 1))
+                # Атака по диагонали вправо
+                if col < 7 and isinstance(board[row + 1][col + 1], Piece) and board[row + 1][col + 1].color != self.color:
+                    moves.append((row + 1, col + 1))
+                # Ход на две клетки вперед, если пешка находится на начальной позиции
+                if row == 1 and board[row + 1][col] == '.' and board[row + 2][col] == '.':
+                    moves.append((row + 2, col))
+        return moves
+
+
+class Rook(Piece):
+    def __str__(self):
+        return 'rw' if self.color == 'white' else 'rb'
+
+    def get_moves(self, board, row, col):
+        moves = []
+        directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        for dr, dc in directions:
+            for i in range(1, 8):
+                r, c = row + dr * i, col + dc * i
+                if 0 <= r < 8 and 0 <= c < 8:
+                    if board[r][c] == '.':
+                        moves.append((r, c))
+                    elif board[r][c].color != self.color:
+                        moves.append((r, c))
+                        break
+                    else:
+                        break
+                else:
+                    break
+        return moves
+
+
+class Knight(Piece):
+    def __str__(self):
+        return 'nw' if self.color == 'white' else 'nb'
+
+    def get_moves(self, board, row, col):
+        moves = []
+        directions = [(1, 2), (1, -2), (-1, 2), (-1, -2), (2, 1), (2, -1), (-2, 1), (-2, -1)]
+        for dr, dc in directions:
+            r, c = row + dr, col + dc
+            if 0 <= r < 8 and 0 <= c < 8:
+                if board[r][c] == '.' or board[r][c].color != self.color:
+                    moves.append((r, c))
+        return moves
+
+
+class Bishop(Piece):
+    def __str__(self):
+        return 'bw' if self.color == 'white' else 'bb'
+
+    def get_moves(self, board, row, col):
+        moves = []
+        directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+        for dr, dc in directions:
+            for i in range(1, 8):
+                r, c = row + dr * i, col + dc * i
+                if 0 <= r < 8 and 0 <= c < 8:
+                    if board[r][c] == '.':
+                        moves.append((r, c))
+                    elif board[r][c].color != self.color:
+                        moves.append((r, c))
+                        break
+                    else:
+                        break
+                else:
+                    break
+        return moves
+
+
+class Queen(Piece):
+    def __str__(self):
+        return 'qw' if self.color == 'white' else 'qb'
+
+    def get_moves(self, board, row, col):
+        moves = []
+        directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)]
+        for dr, dc in directions:
+            for i in range(1, 8):
+                r, c = row + dr * i, col + dc * i
+                if 0 <= r < 8 and 0 <= c < 8:
+                    if board[r][c] == '.':
+                        moves.append((r, c))
+                    elif board[r][c].color != self.color:
+                        moves.append((r, c))
+                        break
+                    else:
+                        break
+                else:
+                    break
+        return moves
+
+
+class King(Piece):
+    def __str__(self):
+        return 'kw' if self.color == 'white' else 'kb'
+
+    def get_moves(self, board, row, col):
+        moves = []
+        directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)]
+        for dr, dc in directions:
+            r, c = row + dr, col + dc
+            if 0 <= r < 8 and 0 <= c < 8:
+                if isinstance(board[r][c], Piece) and board[r][c].color != self.color:
+                    moves.append((r, c))
+                elif board[r][c] == '.':
+                    moves.append((r, c))
+        return moves
+
+class ChessBot:
+    def __init__(self):
+        self.root = tk.Tk()
+        self.canvas = tk.Canvas(self.root, width=400, height=400)
+        self.canvas.pack()
+        self.board = self.initialize_board()
+        self.player_turn = True
+        self.selected_piece = None
+        self.images = {}
+        self.load_images()
+        self.canvas.bind("<Button-1>", self.on_board_click)
+        
+    def load_images(self):
+        pieces = ['pw', 'pb', 'rw', 'rb', 'nw', 'nb', 'bw', 'bb', 'qw', 'qb', 'kw', 'kb']
+        for piece in pieces:
+            path = f"images/{piece}.png"
+            self.images[piece] = ImageTk.PhotoImage(Image.open(path).resize((45, 45), Image.Resampling.LANCZOS))
+
+    def initialize_board(self):
+        board = [['.' for _ in range(8)] for _ in range(8)]
+        board[0] = [Rook('black'), Knight('black'), Bishop('black'), Queen('black'), King('black'), Bishop('black'), Knight('black'), Rook('black')]
+        board[1] = [Pawn('black') for _ in range(8)]
+        board[6] = [Pawn('white') for _ in range(8)]
+        board[7] = [Rook('white'), Knight('white'), Bishop('white'), Queen('white'), King('white'), Bishop('white'), Knight('white'), Rook('white')]
+        return board
+
+    def display_board(self):
+        self.canvas.delete('all')
+        for row in range(8):
+            for col in range(8):
+                x0, y0 = col * 50, row * 50
+                x1, y1 = x0 + 50, y0 + 50
+                color = "AntiqueWhite3" if (row + col) % 2 == 0 else "gray"
+                self.canvas.create_rectangle(x0, y0, x1, y1, fill=color)
+                piece = self.board[row][col]
+                if piece != '.':
+                    image = self.images[str(piece)]
+                    self.canvas.create_image(x0 + 25, y0 + 25, image=image)
+
+    def on_board_click(self, event):
+        col = event.x // 50
+        row = event.y // 50
+
+        if self.selected_piece is None:
+            piece = self.board[row][col]
+            if piece != '.' and ((piece.color == 'white' and self.player_turn) or (piece.color == 'black' and not self.player_turn)):
+                self.selected_piece = (row, col)
+                self.highlight_cell(row, col)
+                self.highlight_possible_moves(row, col)
+        else:
+            if (row, col) in self.board[self.selected_piece[0]][self.selected_piece[1]].get_moves(self.board, *self.selected_piece):
+                self.make_player_move(self.selected_piece, (row, col))
+            else:
+                print("Move is invalid")
+            self.selected_piece = None
+            self.display_board()
+
+    def highlight_cell(self, row, col):
+        x0, y0 = col * 50, row * 50
+        x1, y1 = x0 + 50, y0 + 50
+        self.canvas.create_rectangle(x0, y0, x1, y1, outline="green", width=4)
+
+    def highlight_possible_cell(self, row, col, fill_color):
+        cell_size = 50
+        x0, y0 = col * cell_size, row * cell_size
+        x1, y1 = x0 + cell_size, y0 + cell_size
+        corner_size = 10
+
+        self.canvas.create_polygon(x0, y0, x0 + corner_size, y0, x0, y0 + corner_size, outline="", fill=fill_color)
+        self.canvas.create_polygon(x1, y0, x1 - corner_size, y0, x1, y0 + corner_size, outline="", fill=fill_color)
+        self.canvas.create_polygon(x0, y1, x0 + corner_size, y1, x0, y1 - corner_size, outline="", fill=fill_color)
+        self.canvas.create_polygon(x1, y1, x1 - corner_size, y1, x1, y1 - corner_size, outline="", fill=fill_color)
+
+    def highlight_possible_moves(self, row, col):
+        available_moves = self.board[row][col].get_moves(self.board, row, col)
+        print("Possible moves for the selected piece:")
+        for move in available_moves:
+            print(move)
+            self.highlight_possible_cell(move[0], move[1], "green")
+
+    def make_player_move(self, start_pos, end_pos):
+        piece = self.board[start_pos[0]][start_pos[1]]
+        self.board[start_pos[0]][start_pos[1]] = '.'
+        self.board[end_pos[0]][end_pos[1]] = piece
+        self.player_turn = False
+        self.display_board()
+        self.make_bot_move()
+
+    def make_bot_move(self):
+        available_moves = self.get_available_moves()
+        if available_moves:
+            move = self.best_of(available_moves)
+            start_row, start_col, end_row, end_col = move
+            self.make_move((start_row, start_col), (end_row, end_col))
+            self.player_turn = True
+            self.display_board()
+
+    def best_of(self, available_moves):
+        def try_move(board, move):
+            start_row, start_col, end_row, end_col = move
+            piece = board[start_row][start_col]
+            board[start_row][start_col] = '.'  # Удаляем фигуру с начальной позиции
+            board[end_row][end_col] = piece  # Перемещаем фигуру на конечную позицию
+
+        def undo_move(board, move, captured_piece=None):
+            start_row, start_col, end_row, end_col = move
+            piece = board[end_row][end_col]
+            board[end_row][end_col] = '.'  # Удаляем фигуру с конечной позиции
+            board[start_row][start_col] = piece  # Возвращаем фигуру на начальную позицию
+            if captured_piece:
+                # Если была захвачена фигура, восстанавливаем её на место
+                board[end_row][end_col] = captured_piece
+
+        def evaluate_board(board):
+            # Функция оценки текущего состояния доски
+            # Здесь можно использовать различные методы оценки
+            piece_values = {'pw': 1, 'pb': 1, 'nw': 3.2, 'nb': 3.2, 'bw': 3.3, 'bb': 3.3, 'rw': 5.1, 'rb': 5.1, 'qw': 8.8, 'qb': 8.8, 'kw': 999, 'kb': 999}
+            white_score = 0
+            black_score = 0
+
+            for row in board:
+                for piece in row:
+                    if isinstance(piece, Piece):
+                        if piece.color == 'white':
+                            white_score += piece_values[str(piece)]
+                        else:
+                            black_score += piece_values[str(piece)]
+
+            return white_score - black_score
+
+        def minimax(board, maximizing_player, depth, alpha, beta):
+            if depth == 0:
+                eval = evaluate_board(board)
+                print(f"Evaluation at depth {depth}: {eval}")
+                return eval
+
+            if maximizing_player:
+                max_eval = float('-inf')
+                for move in available_moves:
+                    temp_board = [row[:] for row in board]  # Создаем копию доски
+                    try_move(temp_board, move)
+                    eval = minimax(temp_board, False, depth - 1, alpha, beta)
+                    max_eval = max(max_eval, eval)
+                    alpha = max(alpha, eval)
+                    if beta <= alpha:
+                        break
+                print(f"Max evaluation at depth {depth}: {max_eval}")
+                return max_eval
+            else:
+                min_eval = float('inf')
+                for move in available_moves:
+                    temp_board = [row[:] for row in board]  # Создаем копию доски
+                    try_move(temp_board, move)
+                    eval = minimax(temp_board, True, depth - 1, alpha, beta)
+                    min_eval = min(min_eval, eval)
+                    beta = min(beta, eval)
+                    if beta <= alpha:
+                        break
+                print(f"Min evaluation at depth {depth}: {min_eval}")
+                return min_eval
+
+        best_move = None
+        best_value = float('-inf')
+        alpha = float('-inf')
+        beta = float('inf')
+        depth = 3
+
+        for move in available_moves:
+            temp_board = [row[:] for row in self.board]  # Создаем копию доски
+            try_move(temp_board, move)  # Выполняем временный ход
+            eval = minimax(temp_board, False, depth, alpha, beta)
+            undo_move(temp_board, move)  # Возвращаем фигуры обратно после оценки
+            if eval > best_value:
+                best_move = move
+                best_value = eval
+                alpha = max(alpha, eval)
+
+        return best_move
+
+    def make_move(self, start_pos, end_pos):
+        piece = self.board[start_pos[0]][start_pos[1]]
+        self.board[start_pos[0]][start_pos[1]] = '.'
+        self.board[end_pos[0]][end_pos[1]] = piece
+
+    def get_available_moves(self):
+        available_moves = []
+        for row in range(8):
+            for col in range(8):
+                piece = self.board[row][col]
+                if isinstance(piece, Piece) and piece.color == ('white' if self.player_turn else 'black'):
+                    available_moves.extend([(row, col, move[0], move[1]) for move in piece.get_moves(self.board, row, col)])
+        return available_moves
+
+    def start_game(self):
+        self.display_board()
+        self.root.mainloop()
+
+if __name__ == "__main__":
+    bot = ChessBot()
+    bot.start_game()
